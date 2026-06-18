@@ -5,7 +5,8 @@
 
 /**
  * Initialize the logging subsystem.
- *   Opens logs/bitfream.log for file output (TRACE level).
+ *   Opens logs/bitfream-YYYY-MM-DD-HH-MM-SS.log for file output (TRACE level).
+ *   The filename encodes the precise startup time for traceability.
  *   Console (stderr) output remains enabled.
  *   Returns true on success, false if the log file cannot be opened.
  */
