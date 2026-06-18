@@ -1,6 +1,6 @@
 # Build outputs
 build/
-test/build/
+test/**/build/
 bin/
 *.exe
 *.obj
