@@ -11,6 +11,9 @@ bin/
 *.so
 *.dylib
 
+# Runtime logs
+logs/*.log
+
 # IDE
 .vscode/
 .idea/
