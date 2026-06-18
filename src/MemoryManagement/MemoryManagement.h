@@ -1,7 +1,8 @@
 #ifndef __MEMORY_MANAGEMENT_H__
 #define __MEMORY_MANAGEMENT_H__
 
-#include <cstdint>
+#include <stdint.h>
+#include <stdbool.h>
 
 bool set_main_memory_block_size(uint64_t byte_size);
 

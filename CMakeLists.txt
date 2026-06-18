@@ -12,17 +12,13 @@ add_library(MemoryManagement
     src/MemoryManagement/src/main_memory.c
 )
 
-# Force .c file as C++ since MemoryManagement.h includes <cstdint>
-set_source_files_properties(
-    src/MemoryManagement/src/main_memory.c
-    PROPERTIES LANGUAGE CXX
-)
-
 target_include_directories(MemoryManagement
     PUBLIC
         ${CMAKE_SOURCE_DIR}/src/MemoryManagement
         ${CMAKE_SOURCE_DIR}/src/MemoryManagement/inc
 )
+
+target_link_libraries(MemoryManagement PUBLIC log)
 
 # ===== log.c (rxi/log.c) =====
 add_library(log STATIC
