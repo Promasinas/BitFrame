@@ -4,11 +4,22 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern uint64_t* main_memory_block;
-extern uint64_t main_memory_block_size;
+typedef struct {
+    size_t block_size;
+    size_t addr_offset;
+}memory_block_t;
 
-//以64bit为最小单位存储
-bool set_main_memory_block_size(uint64_t byte_size);
-bool clear_main_memory_block(void);
+size_t* main_memory_ptr;
+size_t main_memory_addr_size;
+
+memory_block_t* block_list;
+size_t block_list_size;
+size_t block_counter;
+
+bool clear_main_memory(void);
+
+bool activate_blocks(void);
+bool write_to_block(size_t block_index, size_t block_addr_offset, void* data, size_t data_addr_size);
+const size_t* get_block_ptr(size_t block_index, size_t block_addr_offset);
 
 #endif
