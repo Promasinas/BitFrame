@@ -1,36 +1,86 @@
 #include "main_memory.h"
-#include "log.h"
 #include <stdlib.h>
+#include <stdint.h>
+#include "log.h"
 
-uint64_t* main_memory_block = NULL;
-uint64_t main_memory_block_size = 0;
+static void* main_memory = NULL;
+static memory_block_t* block_list = NULL;
+static size_t block_counter = 0;
+static size_t block_list_capacity = 0;
+static bool blocks_activated = false;
 
-bool set_main_memory_block_size(uint64_t byte_size){
-    if(byte_size % 8 != 0){
-        log_error("set_main_memory_block_size: byte_size (%lu) is not a multiple of 8", byte_size);
-        return false;
+void clear_main_memory(){
+    free(main_memory);
+    main_memory = NULL;
+}
+
+void clear_blocks(){
+    free(block_list);
+    block_list = NULL;
+    block_counter = 0;
+    block_list_capacity = 0;
+    blocks_activated = false;
+}
+
+bool add_block(size_t block_size){
+    if(block_counter == 0){
+        block_list_capacity = BLOCK_LIST_UNIT_SIZE;
+        void* temp = malloc(sizeof(memory_block_t)*block_list_capacity);
+        if(temp == NULL){
+            log_error("Failed to allocate memory for block list");
+            return false;
+        }
+        block_list = temp;
     }
 
-    main_memory_block_size = byte_size >> 3; //以64bit为最小单位存储
-    main_memory_block = (uint64_t*)malloc(main_memory_block_size * sizeof(uint64_t));
-    if(main_memory_block == NULL){
-        log_error("set_main_memory_block_size: malloc failed for %lu blocks", main_memory_block_size);
-        return false;
+    if(block_counter >= block_list_capacity){
+        block_list_capacity += BLOCK_LIST_UNIT_SIZE;
+        void* temp = realloc(block_list, sizeof(memory_block_t)*block_list_capacity);
+        if(temp == NULL){
+            log_error("Failed to allocate memory for block list");
+            return false;
+        }
+        block_list = temp;
     }
-    log_info("set_main_memory_block_size: allocated %lu x 64-bit blocks (%lu bytes)",
-             main_memory_block_size, byte_size);
 
+    block_list[block_counter].block_size = block_size;
+    block_list[block_counter].addr = NULL;
+    block_counter++;
     return true;
 }
 
-bool clear_main_memory_block(void){
-    if(main_memory_block == NULL){
-        log_error("clear_main_memory_block: main_memory_block is already null");
+bool activate_blocks(){
+    if(blocks_activated){
+        log_error("Blocks already activated");
         return false;
     }
 
-    free(main_memory_block);
-    main_memory_block = NULL;
-    log_info("clear_main_memory_block: memory released");
+    size_t total_size = 0;
+
+    for(size_t i = 0; i < block_counter; i++){
+        total_size += block_list[i].block_size;
+    }
+
+    void* temp = malloc(total_size);
+    if(temp == NULL){
+        log_error("Failed to allocate memory for main memory");
+        return false;
+    }
+    main_memory = temp;
+
+    uint8_t* current_addr = (uint8_t*)main_memory;
+    for(size_t i = 0; i < block_counter; i++){
+        block_list[i].addr = (void*)current_addr;
+        current_addr += block_list[i].block_size;
+    }
+
+    blocks_activated = true;
     return true;
+}
+
+void* get_block_by_index(size_t block_index){
+    if(block_index >= block_counter){
+        return NULL;
+    }
+    return block_list[block_index].addr;
 }
