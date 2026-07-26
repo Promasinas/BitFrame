@@ -1,4 +1,4 @@
-#include "bool_conv_1d.h"
+#include "bool_conv_1d_upsample.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -50,28 +50,32 @@ static void extract_contiguous(const uint8_t* input,
 }
 
 // ============================================================
-// bool_conv_1d_forward  (optimised)
+// bool_conv_1d_upsample_forward
 // ============================================================
-// 1-bit convolution accelerated by:
-//   1. dilation=1 fast path — direct contiguous-memory extraction
-//      from the packed input; no per-bit gather.
-//   2. Word-level (uint64_t) XOR + HW popcount on the resulting
-//      packed window.
-//   3. Dilation > 1: gather scattered bits into a contiguous
-//      window first, then the same XOR + popcount core.
+// Inserts (upsample_times − 1) zeros between each input bit,
+// then runs standard 1D convolution on the virtual upsampled
+// input.  The mapping from virtual position to original input:
 //
-//   output[o] = kernel_size − popcount(window ⊕ kernel)
+//   if virtual_pos % upsample_times == 0:
+//       bit = input[virtual_pos / upsample_times]
+//   else:
+//       bit = 0   (upsampled zero insertion)
+//
+// Fast path: when upsample_times == 1 this is identical to
+// bool_conv_1d_forward and uses the same contiguous-extraction
+// optimisation.
 // ============================================================
-bool bool_conv_1d_forward(void* input_addr,
-                          size_t input_size,
-                          void* kernel_addr,
-                          size_t kernel_size,
-                          void* output_addr,
-                          size_t output_size,
-                          size_t stride,
-                          size_t padding,
-                          size_t dilation,
-                          bool is_loop)
+bool bool_conv_1d_upsample_forward(void* input_addr,
+                                   size_t input_size,
+                                   void* kernel_addr,
+                                   size_t kernel_size,
+                                   void* output_addr,
+                                   size_t output_size,
+                                   size_t upsample_times,
+                                   size_t stride,
+                                   size_t padding,
+                                   size_t dilation,
+                                   bool is_loop)
 {
     if (input_addr == NULL || kernel_addr == NULL || output_addr == NULL) {
         return false;
@@ -79,7 +83,7 @@ bool bool_conv_1d_forward(void* input_addr,
     if (input_size == 0 || kernel_size == 0 || output_size == 0) {
         return false;
     }
-    if (stride == 0 || dilation == 0) {
+    if (stride == 0 || dilation == 0 || upsample_times == 0) {
         return false;
     }
 
@@ -88,6 +92,9 @@ bool bool_conv_1d_forward(void* input_addr,
     uint32_t*      output = (uint32_t*)output_addr;
 
     size_t kernel_bytes = (kernel_size + 7) / 8;
+
+    // Virtual input size after zero-insertion
+    size_t virtual_size = (input_size - 1) * upsample_times + 1;
 
     const uint64_t* kernel64   = (const uint64_t*)kernel;
     size_t          full_words = kernel_size / 64;
@@ -103,31 +110,37 @@ bool bool_conv_1d_forward(void* input_addr,
 
     for (size_t o = 0; o < output_size; o++) {
 
-        int64_t start = (int64_t)(o * stride) - (int64_t)padding;
+        int64_t v_start = (int64_t)(o * stride) - (int64_t)padding;
 
-        // FAST PATH: dilation == 1, linear, window fully in bounds
-        if (dilation == 1 && !is_loop &&
-            start >= 0 && (size_t)(start + kernel_size) <= input_size) {
+        // FAST PATH: upsample_times == 1  →  identical to regular conv
+        if (upsample_times == 1 && dilation == 1 && !is_loop &&
+            v_start >= 0 && (size_t)(v_start + kernel_size) <= input_size) {
 
-            extract_contiguous(input, (size_t)start, kernel_size, window);
+            extract_contiguous(input, (size_t)v_start, kernel_size, window);
 
         } else {
-            // GENERAL PATH: dilation > 1, cyclic, or edge padding
+            // GENERAL PATH: upsample mapping  v_pos → orig bit
             memset(window, 0, kernel_bytes);
 
             for (size_t i = 0; i < kernel_size; i++) {
-                int64_t input_pos = start + (int64_t)(i * dilation);
-                bool    bit       = false;
+                int64_t v_pos = v_start + (int64_t)(i * dilation);
+                bool    bit   = false;
 
                 if (is_loop) {
-                    int64_t wrapped = input_pos % (int64_t)input_size;
+                    int64_t wrapped = v_pos % (int64_t)virtual_size;
                     if (wrapped < 0) {
-                        wrapped += (int64_t)input_size;
+                        wrapped += (int64_t)virtual_size;
                     }
-                    bit = get_bit(input, (size_t)wrapped);
+                    if ((size_t)wrapped % upsample_times == 0) {
+                        size_t orig = (size_t)wrapped / upsample_times;
+                        bit = get_bit(input, orig);
+                    }
                 } else {
-                    if (input_pos >= 0 && (size_t)input_pos < input_size) {
-                        bit = get_bit(input, (size_t)input_pos);
+                    if (v_pos >= 0 && (size_t)v_pos < virtual_size) {
+                        if ((size_t)v_pos % upsample_times == 0) {
+                            size_t orig = (size_t)v_pos / upsample_times;
+                            bit = get_bit(input, orig);
+                        }
                     }
                 }
 

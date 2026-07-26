@@ -3,19 +3,20 @@
 
 #include <stdbool.h>
 
-/**
- * Initialize the logging subsystem.
- *   Opens logs/bitfream-YYYY-MM-DD-HH-MM-SS.log for file output (TRACE level).
- *   The filename encodes the precise startup time for traceability.
- *   Console (stderr) output remains enabled.
- *   Returns true on success, false if the log file cannot be opened.
- */
-bool log_init(void);
+// --- DLL export / import ----------------------------------------
+#ifndef BF_UTILS_API
+  #if defined(_WIN32)
+    #ifdef BF_UTILS_EXPORTS
+      #define BF_UTILS_API __declspec(dllexport)
+    #else
+      #define BF_UTILS_API __declspec(dllimport)
+    #endif
+  #else
+    #define BF_UTILS_API __attribute__((visibility("default")))
+  #endif
+#endif
 
-/**
- * Shut down the logging subsystem.
- *   Closes the log file handle.
- */
-void log_shutdown(void);
+BF_UTILS_API bool log_init(void);
+BF_UTILS_API void log_shutdown(void);
 
 #endif
