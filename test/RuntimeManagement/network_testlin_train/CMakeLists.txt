@@ -1,0 +1,8 @@
+# test/RuntimeManagement/network_testlin_train/CMakeLists.txt
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
+
+add_executable(test_network_testlin_train test_network_testlin_train.c)
+target_link_libraries(test_network_testlin_train PRIVATE RuntimeManagement)
+
+add_test(NAME NetworkTestlinTrain COMMAND test_network_testlin_train)

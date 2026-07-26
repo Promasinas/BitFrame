@@ -170,6 +170,20 @@ target_link_libraries(OperatorKernals PUBLIC log)
 target_compile_definitions(OperatorKernals PRIVATE BF_OPERATORKERNALS_EXPORTS)
 
 # ================================================================
+# Library: RuntimeManagement  (shared → .dll / .so / .dylib)
+# ================================================================
+add_library(RuntimeManagement SHARED
+    src/RuntimeManagement/src/network_forward.c
+    src/RuntimeManagement/src/network_testlin_train.c
+)
+target_include_directories(RuntimeManagement
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/src/RuntimeManagement
+        ${CMAKE_SOURCE_DIR}/src/RuntimeManagement/inc
+)
+target_compile_definitions(RuntimeManagement PRIVATE BF_RUNTIME_EXPORTS)
+
+# ================================================================
 # Main executable
 # ================================================================
 if(BUILD_MAIN)
@@ -191,6 +205,8 @@ if(BUILD_TESTS)
     add_subdirectory(test/OperatorKernals/bool_conv_1d_upsample)
     add_subdirectory(test/MemoryManagement/main_memory)
     add_subdirectory(test/Utils/log_init)
+    add_subdirectory(test/RuntimeManagement/network_forward)
+    add_subdirectory(test/RuntimeManagement/network_testlin_train)
 endif()
 
 # ================================================================
