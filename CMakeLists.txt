@@ -38,10 +38,6 @@ message(STATUS "BitFream — target: ${BF_OS_NAME} / ${BF_ARCH}")
 # ================================================================
 # Output directories
 # ================================================================
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-
 # ================================================================
 # C/C++ standards
 # ================================================================
@@ -221,5 +217,5 @@ message(STATUS "  Tests:     ${BUILD_TESTS}")
 message(STATUS "  Main:      ${BUILD_MAIN}")
 message(STATUS "  POPCNT:    ${USE_POPCNT}")
 message(STATUS "  AVX2:      ${USE_AVX2}")
-message(STATUS "  Output:    lib/  bin/")
+message(STATUS "  Output:    build/")
 message(STATUS "")
