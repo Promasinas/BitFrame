@@ -1,25 +1,21 @@
 #ifndef __MAIN_MEMORY_H__
 #define __MAIN_MEMORY_H__
 
-#define LIST_UNIT_SIZE 16
+#define BLOCK_LIST_UNIT_SIZE 128
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct {
     size_t block_size;
-    size_t addr;
+    void* addr;
 }memory_block_t;
 
-void* main_memory;
-
-memory_block_t* block_list;
-size_t block_count;
-size_t block_list_capacity;
-
-void clear_memory(void);
+void clear_blocks();
+void clear_main_memory();
 bool add_block(size_t block_size);
-bool activate_blocks(void);
-void* get_block_ptr_by_index(size_t index);
+bool activate_blocks();
+// bool allocate_blocks();
+void* get_block_by_index(size_t block_index);
 
 #endif
