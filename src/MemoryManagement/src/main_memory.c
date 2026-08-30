@@ -24,7 +24,7 @@ void clear_blocks(){
 
 bool add_block(size_t block_size){
     if(block_counter == 0){
-        block_list_capacity = BLOCK_LIST_UNIT_SIZE;
+        block_list_capacity = BLOCK_LIST_INIT_SIZE;
         void* temp = malloc(sizeof(memory_block_t)*block_list_capacity);
         if(temp == NULL){
             log_error("Failed to allocate memory for block list");
@@ -34,7 +34,7 @@ bool add_block(size_t block_size){
     }
 
     if(block_counter >= block_list_capacity){
-        block_list_capacity += BLOCK_LIST_UNIT_SIZE;
+        block_list_capacity += BLOCK_LIST_INIT_SIZE;
         void* temp = realloc(block_list, sizeof(memory_block_t)*block_list_capacity);
         if(temp == NULL){
             log_error("Failed to allocate memory for block list");
@@ -47,6 +47,10 @@ bool add_block(size_t block_size){
     block_list[block_counter].addr = NULL;
     block_counter++;
     return true;
+}
+
+size_t get_top_block_index(){
+    return block_counter - 1;
 }
 
 bool activate_blocks(){
