@@ -82,9 +82,14 @@ bool activate_blocks(){
     return true;
 }
 
-void* get_block_by_index(size_t block_index){
+memory_block_t get_block_by_index(size_t block_index){
     if(block_index >= block_counter){
-        return NULL;
+        memory_block_t null_block = {0};
+        
+        log_error("Block index %zu out of bounds (max index: %zu)", block_index, block_counter - 1);
+
+        return null_block;
     }
-    return block_list[block_index].addr;
+    
+    return block_list[block_index];
 }
